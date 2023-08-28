@@ -141,8 +141,8 @@ class Upgrader with WidgetsBindingObserver {
   bool _initCalled = false;
   PackageInfo? _packageInfo;
 
-  String? _installedVersion;
-  String? _appStoreVersion;
+  String? installedApiVersion;
+  String? apiVersion;
   String? _appStoreListingURL;
   String? _releaseNotes;
   String? _updateAvailable;
@@ -188,6 +188,8 @@ class Upgrader with WidgetsBindingObserver {
     this.countryCode,
     this.languageCode,
     this.minAppVersion,
+    this.apiVersion,
+    this.installedApiVersion,
     this.dialogStyle = UpgradeDialogStyle.material,
     this.cupertinoButtonTextStyle,
     UpgraderOS? upgraderOS,
@@ -206,7 +208,7 @@ class Upgrader with WidgetsBindingObserver {
   }
 
   void installAppStoreVersion(String version) {
-    _appStoreVersion = version;
+    // apiVersion = version;
   }
 
   void installAppStoreListingURL(String url) {
@@ -263,7 +265,7 @@ class Upgrader with WidgetsBindingObserver {
         }
       }
 
-      _installedVersion = _packageInfo!.version;
+      // _installedApiVersion = _packageInfo!.version;
 
       await _updateVersionInfo();
 
@@ -331,7 +333,7 @@ class Upgrader with WidgetsBindingObserver {
 
         try {
           if (criticalVersion.isNotEmpty &&
-              Version.parse(_installedVersion!) <
+              Version.parse(installedApiVersion!) <
                   Version.parse(criticalVersion)) {
             _isCriticalUpdate = true;
           }
@@ -340,7 +342,7 @@ class Upgrader with WidgetsBindingObserver {
           _isCriticalUpdate = false;
         }
 
-        _appStoreVersion = bestItem.versionString;
+        // apiVersion = bestItem.versionString;
         _appStoreListingURL = bestItem.fileURL;
         _releaseNotes = bestItem.itemDescription;
       }
@@ -373,7 +375,7 @@ class Upgrader with WidgetsBindingObserver {
             .lookupByBundleId(_packageInfo!.packageName, country: country));
 
         if (response != null) {
-          _appStoreVersion = iTunes.version(response);
+          // apiVersion = iTunes.version(response);
           _appStoreListingURL = iTunes.trackViewUrl(response);
           _releaseNotes ??= iTunes.releaseNotes(response);
           final mav = iTunes.minAppVersion(response);
@@ -399,7 +401,7 @@ class Upgrader with WidgetsBindingObserver {
     final response =
         await (playStore.lookupById(id, country: country, language: language));
     if (response != null) {
-      _appStoreVersion ??= playStore.version(response);
+      // apiVersion ??= playStore.version(response);
       _appStoreListingURL ??=
           playStore.lookupURLById(id, language: language, country: country);
       _releaseNotes ??= playStore.releaseNotes(response);
@@ -447,9 +449,9 @@ class Upgrader with WidgetsBindingObserver {
 
   String? currentAppStoreListingURL() => _appStoreListingURL;
 
-  String? currentAppStoreVersion() => _appStoreVersion;
+  String? currentAppStoreVersion() => apiVersion;
 
-  String? currentInstalledVersion() => _installedVersion;
+  String? currentInstalledVersion() => installedApiVersion;
 
   String? get releaseNotes => _releaseNotes;
 
@@ -525,8 +527,8 @@ class Upgrader with WidgetsBindingObserver {
       willDisplayUpgrade!(
           display: rv,
           minAppVersion: minAppVersion,
-          installedVersion: _installedVersion,
-          appStoreVersion: _appStoreVersion);
+          installedVersion: installedApiVersion,
+          appStoreVersion: apiVersion);
     }
 
     return rv;
@@ -538,7 +540,7 @@ class Upgrader with WidgetsBindingObserver {
     if (minAppVersion != null) {
       try {
         final minVersion = Version.parse(minAppVersion!);
-        final installedVersion = Version.parse(_installedVersion!);
+        final installedVersion = Version.parse(installedApiVersion!);
         rv = installedVersion < minVersion;
       } catch (e) {
         if (debugLogging) {
@@ -564,7 +566,7 @@ class Upgrader with WidgetsBindingObserver {
 
   bool alreadyIgnoredThisVersion() {
     final rv =
-        _userIgnoredVersion != null && _userIgnoredVersion == _appStoreVersion;
+        _userIgnoredVersion != null && _userIgnoredVersion == apiVersion;
     if (rv && debugLogging) {
       print('upgrader: alreadyIgnoredThisVersion: true');
     }
@@ -573,21 +575,21 @@ class Upgrader with WidgetsBindingObserver {
 
   bool isUpdateAvailable() {
     if (debugLogging) {
-      print('upgrader: appStoreVersion: $_appStoreVersion');
-      print('upgrader: installedVersion: $_installedVersion');
+      print('upgrader: appStoreVersion: $apiVersion');
+      print('upgrader: installedVersion: $installedApiVersion');
       print('upgrader: minAppVersion: $minAppVersion');
     }
-    if (_appStoreVersion == null || _installedVersion == null) {
+    if (apiVersion == null || installedApiVersion == null) {
       if (debugLogging) print('upgrader: isUpdateAvailable: false');
       return false;
     }
 
     try {
-      final appStoreVersion = Version.parse(_appStoreVersion!);
-      final installedVersion = Version.parse(_installedVersion!);
+      final appStoreVersion = Version.parse(apiVersion!);
+      final installedVersion = Version.parse(installedApiVersion!);
 
       final available = appStoreVersion > installedVersion;
-      _updateAvailable = available ? _appStoreVersion : null;
+      _updateAvailable = available ? apiVersion : null;
     } on Exception catch (e) {
       if (debugLogging) {
         print('upgrader: isUpdateAvailable: $e');
@@ -812,7 +814,7 @@ class Upgrader with WidgetsBindingObserver {
   Future<bool> _saveIgnored() async {
     var prefs = await SharedPreferences.getInstance();
 
-    _userIgnoredVersion = _appStoreVersion;
+    _userIgnoredVersion = apiVersion;
     await prefs.setString('userIgnoredVersion', _userIgnoredVersion ?? '');
     return true;
   }
@@ -822,7 +824,7 @@ class Upgrader with WidgetsBindingObserver {
     _lastTimeAlerted = DateTime.now();
     await prefs.setString('lastTimeAlerted', _lastTimeAlerted.toString());
 
-    _lastVersionAlerted = _appStoreVersion;
+    _lastVersionAlerted = apiVersion;
     await prefs.setString('lastVersionAlerted', _lastVersionAlerted ?? '');
 
     _hasAlerted = true;
